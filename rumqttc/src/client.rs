@@ -70,7 +70,7 @@ impl AsyncClient {
         qos: QoS,
         retain: bool,
         payload: V,
-    ) -> Result<(), ClientError>
+    ) -> Result<u16, ClientError>
     where
         S: Into<String>,
         V: Into<Vec<u8>>,
@@ -78,12 +78,13 @@ impl AsyncClient {
         let topic = topic.into();
         let mut publish = Publish::new(&topic, qos, payload);
         publish.retain = retain;
+        let pkid = publish.pkid;
         let publish = Request::Publish(publish);
         if !valid_topic(&topic) {
             return Err(ClientError::Request(publish));
         }
         self.request_tx.send_async(publish).await?;
-        Ok(())
+        Ok(pkid)
     }
 
     /// Attempts to send a MQTT Publish to the `EventLoop`.
